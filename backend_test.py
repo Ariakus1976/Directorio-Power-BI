@@ -20,7 +20,7 @@ EXPECTED_WORK_AREAS = [
 ]
 
 # Expected total number of reports
-EXPECTED_TOTAL_REPORTS = 43
+EXPECTED_TOTAL_REPORTS = 46
 
 # Colors for terminal output
 class Colors:
