@@ -757,6 +757,13 @@ function App() {
           </div>
         </div>
       </footer>
+
+      {/* Admin Modal */}
+      <AdminModal 
+        isOpen={showAdmin} 
+        onClose={() => setShowAdmin(false)} 
+        onRefresh={fetchData}
+      />
     </div>
   );
 }
