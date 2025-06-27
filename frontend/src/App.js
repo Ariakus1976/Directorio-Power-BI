@@ -810,36 +810,56 @@ function App() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            {filteredReports.map((report) => (
-              <div
-                key={report.id}
-                onClick={() => handleReportClick(report.url)}
-                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border border-gray-200 hover:border-blue-300 transform hover:-translate-y-1 group"
-              >
-                {/* Report Header with Group Badge */}
-                <div className={`bg-gradient-to-r ${GROUP_COLORS[report.group]} p-3 rounded-t-lg`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-white font-medium text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full truncate">
-                      {GROUP_ICONS[report.group]} {report.group}
-                    </span>
-                    <svg className="w-4 h-4 text-white opacity-75 group-hover:opacity-100 transition-opacity flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
+          <div className="space-y-8">
+            {getGroupedReports().map(({ group, reports: groupReports }) => (
+              <div key={group} className="space-y-4">
+                {/* Group Header */}
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className={`bg-gradient-to-r ${GROUP_COLORS[group]} p-3 rounded-lg shadow-md`}>
+                    <span className="text-white text-2xl">{GROUP_ICONS[group] || '📁'}</span>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">{group}</h2>
+                    <p className="text-gray-600">
+                      {groupReports.length} {groupReports.length === 1 ? 'informe' : 'informes'}
+                    </p>
                   </div>
                 </div>
 
-                {/* Report Content */}
-                <div className="p-4">
-                  {/* Report Title with Arrow */}
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900 text-sm leading-tight group-hover:text-blue-600 transition-colors flex-1 pr-2">
-                      {report.name}
-                    </h3>
-                    <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
+                {/* Reports Grid for this group */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                  {groupReports.map((report) => (
+                    <div
+                      key={report.id}
+                      onClick={() => handleReportClick(report.url)}
+                      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border border-gray-200 hover:border-blue-300 transform hover:-translate-y-1 group"
+                    >
+                      {/* Report Header with Group Badge */}
+                      <div className={`bg-gradient-to-r ${GROUP_COLORS[report.group]} p-3 rounded-t-lg`}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-white font-medium text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full truncate">
+                            {GROUP_ICONS[report.group]} {report.group}
+                          </span>
+                          <svg className="w-4 h-4 text-white opacity-75 group-hover:opacity-100 transition-opacity flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </div>
+                      </div>
+
+                      {/* Report Content */}
+                      <div className="p-4">
+                        {/* Report Title with Arrow */}
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-gray-900 text-sm leading-tight group-hover:text-blue-600 transition-colors flex-1 pr-2">
+                            {report.name}
+                          </h3>
+                          <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
