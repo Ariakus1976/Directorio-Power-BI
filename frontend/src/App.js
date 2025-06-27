@@ -588,6 +588,15 @@ function App() {
     window.open(POWERBI_METRICS_URL, '_blank', 'noopener,noreferrer');
   };
 
+  const handleAdminClick = () => {
+    setShowPasswordModal(true);
+  };
+
+  const handlePasswordSuccess = () => {
+    setShowPasswordModal(false);
+    setShowAdmin(true);
+  };
+
   const getGroupCount = (groupName) => {
     if (!stats?.groups) return 0;
     const groupStat = stats.groups.find(g => g._id === groupName);
