@@ -665,7 +665,7 @@ function App() {
 
               {/* Admin Button */}
               <button
-                onClick={() => setShowAdmin(true)}
+                onClick={handleAdminClick}
                 className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center space-x-2"
                 title="Administrar informes"
               >
