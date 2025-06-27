@@ -60,8 +60,8 @@ def test_health_check() -> bool:
     print_test_header("Basic Health Check")
     
     try:
-        # The root endpoint is at /api/ not /
-        response = requests.get(f"{API_BASE_URL}/")
+        # The root endpoint is at / not /api/
+        response = requests.get(f"{BACKEND_URL}/")
         response.raise_for_status()
         data = response.json()
         
