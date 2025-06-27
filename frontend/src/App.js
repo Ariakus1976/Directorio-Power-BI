@@ -258,47 +258,35 @@ function App() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {filteredReports.map((report) => (
               <div
                 key={report.id}
                 onClick={() => handleReportClick(report.url)}
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-200 hover:border-blue-300 transform hover:-translate-y-1 group"
+                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border border-gray-200 hover:border-blue-300 transform hover:-translate-y-1 group"
               >
                 {/* Report Header with Group Badge */}
-                <div className={`bg-gradient-to-r ${GROUP_COLORS[report.group]} p-4 rounded-t-xl`}>
+                <div className={`bg-gradient-to-r ${GROUP_COLORS[report.group]} p-3 rounded-t-lg`}>
                   <div className="flex items-center justify-between">
-                    <span className="text-white font-semibold text-sm bg-white bg-opacity-20 px-3 py-1 rounded-full">
+                    <span className="text-white font-medium text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full truncate">
                       {GROUP_ICONS[report.group]} {report.group}
                     </span>
-                    <svg className="w-5 h-5 text-white opacity-75 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-white opacity-75 group-hover:opacity-100 transition-opacity flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
                   </div>
                 </div>
 
                 {/* Report Content */}
-                <div className="p-6">
-                  {/* Power BI Icon */}
-                  <div className="flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-xl mb-4 mx-auto">
-                    <svg className="w-10 h-10 text-yellow-600" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M14.5 2L12 4.5L14.5 7L17 4.5L14.5 2M9.5 7L7 9.5L9.5 12L12 9.5L9.5 7M14.5 12L12 14.5L14.5 17L17 14.5L14.5 12M4.5 7L2 9.5L4.5 12L7 9.5L4.5 7M9.5 17L7 19.5L9.5 22L12 19.5L9.5 17M19.5 7L17 9.5L19.5 12L22 9.5L19.5 7Z" />
+                <div className="p-4">
+                  {/* Report Title with Arrow */}
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900 text-sm leading-tight group-hover:text-blue-600 transition-colors flex-1 pr-2">
+                      {report.name}
+                    </h3>
+                    <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                     </svg>
-                  </div>
-
-                  {/* Report Title */}
-                  <h3 className="font-bold text-gray-900 text-lg mb-2 text-center leading-tight group-hover:text-blue-600 transition-colors">
-                    {report.name}
-                  </h3>
-
-                  {/* Call to Action */}
-                  <div className="text-center mt-4">
-                    <span className="inline-flex items-center text-blue-600 font-semibold text-sm group-hover:text-blue-700 transition-colors">
-                      Abrir informe
-                      <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                      </svg>
-                    </span>
                   </div>
                 </div>
               </div>
