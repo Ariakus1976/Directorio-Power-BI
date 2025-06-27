@@ -518,6 +518,7 @@ function App() {
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   // Fetch data on component mount
   useEffect(() => {
