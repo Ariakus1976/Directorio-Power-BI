@@ -440,6 +440,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
+  const [showAdmin, setShowAdmin] = useState(false);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -505,6 +506,10 @@ function App() {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const handleMetricsClick = () => {
+    window.open(POWERBI_METRICS_URL, '_blank', 'noopener,noreferrer');
+  };
+
   const getGroupCount = (groupName) => {
     if (!stats?.groups) return 0;
     const groupStat = stats.groups.find(g => g._id === groupName);
@@ -557,11 +562,40 @@ function App() {
                 <p className="text-gray-600 mt-1">Acceso centralizado a informes empresariales</p>
               </div>
             </div>
-            {stats && (
-              <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-200">
-                <span className="text-blue-800 font-semibold">{stats.total_reports} informes</span>
-              </div>
-            )}
+            
+            <div className="flex items-center space-x-4">
+              {/* Metrics Button */}
+              <button
+                onClick={handleMetricsClick}
+                className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center space-x-2"
+                title="Ver métricas de uso de Power BI"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span className="hidden sm:block">Métricas de Uso</span>
+              </button>
+
+              {/* Admin Button */}
+              <button
+                onClick={() => setShowAdmin(true)}
+                className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center space-x-2"
+                title="Administrar informes"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="hidden sm:block">Administrar</span>
+              </button>
+
+              {/* Stats Display */}
+              {stats && (
+                <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-200">
+                  <span className="text-blue-800 font-semibold">{stats.total_reports} informes</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
