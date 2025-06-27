@@ -580,6 +580,30 @@ function App() {
     setFilteredReports(filtered);
   };
 
+  // Group reports by area and sort alphabetically within each group
+  const getGroupedReports = () => {
+    const grouped = filteredReports.reduce((acc, report) => {
+      if (!acc[report.group]) {
+        acc[report.group] = [];
+      }
+      acc[report.group].push(report);
+      return acc;
+    }, {});
+
+    // Sort reports within each group alphabetically
+    Object.keys(grouped).forEach(group => {
+      grouped[group].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+    });
+
+    // Sort groups alphabetically
+    const sortedGroups = Object.keys(grouped).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+    
+    return sortedGroups.map(group => ({
+      group,
+      reports: grouped[group]
+    }));
+  };
+
   const handleReportClick = (url) => {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
