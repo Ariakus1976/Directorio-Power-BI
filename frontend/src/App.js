@@ -3,6 +3,9 @@ import './App.css';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
+// Power BI Usage Metrics URL
+const POWERBI_METRICS_URL = 'https://app.powerbi.com/groups/cdb9df2c-4dfa-4824-888d-26de261e1c52/reports/1fe1bfbc-c42d-4292-86e0-e7ffb54037d7/a04359c48f27001e9786?experience=power-bi';
+
 // Group color mapping for visual organization
 const GROUP_COLORS = {
   'DIRECCION COMERCIAL': 'from-blue-500 to-blue-600',
@@ -22,6 +25,410 @@ const GROUP_ICONS = {
   'GERENCIA': '🏢',
   'SUCURSALES': '🏪',
   'ALTEC': '⚙️'
+};
+
+// Admin Modal Component
+const AdminModal = ({ isOpen, onClose, onRefresh }) => {
+  const [activeTab, setActiveTab] = useState('add');
+  const [reports, setReports] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('');
+
+  // Form states
+  const [newReport, setNewReport] = useState({ name: '', group: '', url: '' });
+  const [editingReport, setEditingReport] = useState(null);
+  const [newGroup, setNewGroup] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchAdminData();
+    }
+  }, [isOpen]);
+
+  const fetchAdminData = async () => {
+    try {
+      const [reportsRes, groupsRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/reports`),
+        fetch(`${API_BASE_URL}/api/groups`)
+      ]);
+      
+      const reportsData = await reportsRes.json();
+      const groupsData = await groupsRes.json();
+      
+      setReports(reportsData.data || []);
+      setGroups(groupsData.data || []);
+    } catch (error) {
+      showMessage('Error al cargar datos', 'error');
+    }
+  };
+
+  const showMessage = (msg, type) => {
+    setMessage(msg);
+    setMessageType(type);
+    setTimeout(() => setMessage(''), 3000);
+  };
+
+  const handleCreateReport = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/reports`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newReport)
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        showMessage('Informe creado exitosamente', 'success');
+        setNewReport({ name: '', group: '', url: '' });
+        fetchAdminData();
+        onRefresh();
+      } else {
+        showMessage(data.detail || 'Error al crear el informe', 'error');
+      }
+    } catch (error) {
+      showMessage('Error de conexión', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateReport = async (e) => {
+    e.preventDefault();
+    if (!editingReport) return;
+    
+    setLoading(true);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/reports/${editingReport.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editingReport.name,
+          group: editingReport.group,
+          url: editingReport.url
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        showMessage('Informe actualizado exitosamente', 'success');
+        setEditingReport(null);
+        fetchAdminData();
+        onRefresh();
+      } else {
+        showMessage(data.detail || 'Error al actualizar el informe', 'error');
+      }
+    } catch (error) {
+      showMessage('Error de conexión', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteReport = async (reportId, reportName) => {
+    if (!window.confirm(`¿Estás seguro de que quieres eliminar el informe "${reportName}"?`)) {
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/reports/${reportId}`, {
+        method: 'DELETE'
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        showMessage('Informe eliminado exitosamente', 'success');
+        fetchAdminData();
+        onRefresh();
+      } else {
+        showMessage(data.detail || 'Error al eliminar el informe', 'error');
+      }
+    } catch (error) {
+      showMessage('Error de conexión', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Administración de Informes</h2>
+            <button 
+              onClick={onClose}
+              className="text-white hover:text-gray-200 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Message */}
+        {message && (
+          <div className={`p-4 m-4 rounded-lg ${messageType === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            {message}
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div className="border-b border-gray-200">
+          <nav className="flex space-x-8 px-6">
+            {[
+              { id: 'add', label: 'Agregar Informe', icon: '➕' },
+              { id: 'manage', label: 'Gestionar Informes', icon: '📝' },
+              { id: 'groups', label: 'Grupos', icon: '📁' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {tab.icon} {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 max-h-[60vh] overflow-y-auto">
+          {/* Add Report Tab */}
+          {activeTab === 'add' && (
+            <form onSubmit={handleCreateReport} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nombre del Informe *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newReport.name}
+                  onChange={(e) => setNewReport({...newReport, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Ej: Análisis de Ventas Q1"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Grupo/Área *
+                </label>
+                <select
+                  required
+                  value={newReport.group}
+                  onChange={(e) => setNewReport({...newReport, group: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Seleccionar grupo...</option>
+                  {groups.map((group) => (
+                    <option key={group} value={group}>{group}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  URL de Power BI *
+                </label>
+                <input
+                  type="url"
+                  required
+                  value={newReport.url}
+                  onChange={(e) => setNewReport({...newReport, url: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="https://app.powerbi.com/groups/..."
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Debe ser una URL válida de app.powerbi.com
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {loading ? 'Creando...' : 'Crear Informe'}
+              </button>
+            </form>
+          )}
+
+          {/* Manage Reports Tab */}
+          {activeTab === 'manage' && (
+            <div className="space-y-4">
+              {reports.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">No hay informes para gestionar</p>
+              ) : (
+                reports.map((report) => (
+                  <div key={report.id} className="border border-gray-200 rounded-lg p-4">
+                    {editingReport?.id === report.id ? (
+                      <form onSubmit={handleUpdateReport} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                            <input
+                              type="text"
+                              value={editingReport.name}
+                              onChange={(e) => setEditingReport({...editingReport, name: e.target.value})}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Grupo</label>
+                            <select
+                              value={editingReport.group}
+                              onChange={(e) => setEditingReport({...editingReport, group: e.target.value})}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            >
+                              {groups.map((group) => (
+                                <option key={group} value={group}>{group}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
+                          <input
+                            type="url"
+                            value={editingReport.url}
+                            onChange={(e) => setEditingReport({...editingReport, url: e.target.value})}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            type="submit"
+                            disabled={loading}
+                            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                          >
+                            Guardar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingReport(null)}
+                            className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900">{report.name}</h3>
+                          <p className="text-sm text-gray-600">{report.group}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => setEditingReport(report)}
+                            className="text-blue-600 hover:text-blue-800 p-1"
+                            title="Editar"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReport(report.id, report.name)}
+                            className="text-red-600 hover:text-red-800 p-1"
+                            title="Eliminar"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Groups Tab */}
+          {activeTab === 'groups' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Crear Nuevo Grupo</h3>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={newGroup}
+                    onChange={(e) => setNewGroup(e.target.value)}
+                    placeholder="Nombre del nuevo grupo"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!newGroup.trim()) return;
+                      try {
+                        const response = await fetch(`${API_BASE_URL}/api/admin/groups`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ name: newGroup })
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                          showMessage('Grupo creado exitosamente', 'success');
+                          setNewGroup('');
+                          fetchAdminData();
+                        } else {
+                          showMessage(data.detail || 'Error al crear el grupo', 'error');
+                        }
+                      } catch (error) {
+                        showMessage('Error de conexión', 'error');
+                      }
+                    }}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                  >
+                    Crear
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Grupos Existentes</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {groups.map((group) => (
+                    <div key={group} className="bg-gray-50 p-4 rounded-lg flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-2xl">{GROUP_ICONS[group] || '📁'}</span>
+                        <span className="font-medium">{group}</span>
+                      </div>
+                      <span className="text-sm text-gray-500">
+                        {reports.filter(r => r.group === group).length} informes
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 function App() {
