@@ -27,6 +27,83 @@ const GROUP_ICONS = {
   'ALTEC': '⚙️'
 };
 
+// Password Modal Component
+const PasswordModal = ({ isOpen, onClose, onSuccess }) => {
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (password === 'Nok85662') {
+      onSuccess();
+      setPassword('');
+      setError('');
+    } else {
+      setError('Contraseña incorrecta');
+      setPassword('');
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+        <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 rounded-t-xl">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold">Acceso de Administración</h2>
+            <button 
+              onClick={onClose}
+              className="text-white hover:text-gray-200 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Contraseña de Administrador
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                placeholder="Ingresa la contraseña"
+                autoFocus
+              />
+              {error && (
+                <p className="text-red-600 text-sm mt-1">{error}</p>
+              )}
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                type="submit"
+                className="flex-1 bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Acceder
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Admin Modal Component
 const AdminModal = ({ isOpen, onClose, onRefresh }) => {
   const [activeTab, setActiveTab] = useState('add');
