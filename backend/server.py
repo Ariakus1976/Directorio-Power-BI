@@ -497,6 +497,223 @@ async def get_stats():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
+# Administration endpoints
+from pydantic import BaseModel, validator
+
+class ReportCreate(BaseModel):
+    name: str
+    group: str
+    url: str
+    
+    @validator('name')
+    def name_must_not_be_empty(cls, v):
+        if not v.strip():
+            raise ValueError('El nombre del informe no puede estar vacío')
+        return v.strip()
+    
+    @validator('group')
+    def group_must_not_be_empty(cls, v):
+        if not v.strip():
+            raise ValueError('El grupo no puede estar vacío')
+        return v.strip().upper()
+    
+    @validator('url')
+    def url_must_be_powerbi(cls, v):
+        if not v.strip():
+            raise ValueError('La URL no puede estar vacía')
+        if 'app.powerbi.com' not in v:
+            raise ValueError('La URL debe ser de Power BI (app.powerbi.com)')
+        return v.strip()
+
+class ReportUpdate(BaseModel):
+    name: Optional[str] = None
+    group: Optional[str] = None
+    url: Optional[str] = None
+    
+    @validator('name')
+    def name_must_not_be_empty(cls, v):
+        if v is not None and not v.strip():
+            raise ValueError('El nombre del informe no puede estar vacío')
+        return v.strip() if v else v
+    
+    @validator('group')
+    def group_must_not_be_empty(cls, v):
+        if v is not None and not v.strip():
+            raise ValueError('El grupo no puede estar vacío')
+        return v.strip().upper() if v else v
+    
+    @validator('url')
+    def url_must_be_powerbi(cls, v):
+        if v is not None:
+            if not v.strip():
+                raise ValueError('La URL no puede estar vacía')
+            if 'app.powerbi.com' not in v:
+                raise ValueError('La URL debe ser de Power BI (app.powerbi.com)')
+            return v.strip()
+        return v
+
+@app.post("/api/admin/reports")
+async def create_report(report: ReportCreate):
+    """Create a new report"""
+    try:
+        # Check if report with same name and group already exists
+        existing = reports_collection.find_one({"name": report.name, "group": report.group})
+        if existing:
+            raise HTTPException(status_code=400, detail="Ya existe un informe con ese nombre en el mismo grupo")
+        
+        # Create new report
+        new_report = {
+            "id": str(uuid.uuid4()),
+            "name": report.name,
+            "group": report.group,
+            "url": report.url,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        
+        result = reports_collection.insert_one(new_report)
+        if result.inserted_id:
+            # Remove MongoDB's _id from response
+            new_report.pop("_id", None)
+            return {
+                "success": True,
+                "message": "Informe creado exitosamente",
+                "data": new_report
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Error al crear el informe")
+            
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.put("/api/admin/reports/{report_id}")
+async def update_report(report_id: str, report: ReportUpdate):
+    """Update an existing report"""
+    try:
+        # Check if report exists
+        existing = reports_collection.find_one({"id": report_id})
+        if not existing:
+            raise HTTPException(status_code=404, detail="Informe no encontrado")
+        
+        # Build update data
+        update_data = {"updated_at": datetime.utcnow()}
+        if report.name is not None:
+            update_data["name"] = report.name
+        if report.group is not None:
+            update_data["group"] = report.group
+        if report.url is not None:
+            update_data["url"] = report.url
+        
+        # Check for duplicates if name or group is being updated
+        if report.name is not None or report.group is not None:
+            new_name = report.name if report.name is not None else existing["name"]
+            new_group = report.group if report.group is not None else existing["group"]
+            
+            duplicate = reports_collection.find_one({
+                "name": new_name, 
+                "group": new_group,
+                "id": {"$ne": report_id}
+            })
+            if duplicate:
+                raise HTTPException(status_code=400, detail="Ya existe un informe con ese nombre en el mismo grupo")
+        
+        # Update report
+        result = reports_collection.update_one({"id": report_id}, {"$set": update_data})
+        
+        if result.modified_count > 0:
+            updated_report = reports_collection.find_one({"id": report_id}, {"_id": 0})
+            return {
+                "success": True,
+                "message": "Informe actualizado exitosamente",
+                "data": updated_report
+            }
+        else:
+            return {
+                "success": True,
+                "message": "No se realizaron cambios",
+                "data": existing
+            }
+            
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.delete("/api/admin/reports/{report_id}")
+async def delete_report(report_id: str):
+    """Delete a report"""
+    try:
+        # Check if report exists
+        existing = reports_collection.find_one({"id": report_id})
+        if not existing:
+            raise HTTPException(status_code=404, detail="Informe no encontrado")
+        
+        # Delete report
+        result = reports_collection.delete_one({"id": report_id})
+        
+        if result.deleted_count > 0:
+            return {
+                "success": True,
+                "message": "Informe eliminado exitosamente"
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Error al eliminar el informe")
+            
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.post("/api/admin/groups")
+async def create_group(group_data: dict):
+    """Create a new group"""
+    try:
+        group_name = group_data.get("name", "").strip().upper()
+        if not group_name:
+            raise HTTPException(status_code=400, detail="El nombre del grupo no puede estar vacío")
+        
+        # Check if group already exists
+        existing_groups = reports_collection.distinct("group")
+        if group_name in existing_groups:
+            raise HTTPException(status_code=400, detail="El grupo ya existe")
+        
+        return {
+            "success": True,
+            "message": f"Grupo '{group_name}' listo para usar",
+            "data": {"name": group_name}
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.delete("/api/admin/groups/{group_name}")
+async def delete_group(group_name: str):
+    """Delete a group (only if it has no reports)"""
+    try:
+        # Check if group has reports
+        reports_in_group = reports_collection.count_documents({"group": group_name})
+        if reports_in_group > 0:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"No se puede eliminar el grupo '{group_name}' porque tiene {reports_in_group} informes asociados"
+            )
+        
+        return {
+            "success": True,
+            "message": f"Grupo '{group_name}' eliminado exitosamente"
+        }
+        
+    except PyMongoError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
