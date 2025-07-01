@@ -179,3 +179,5 @@
 ## agent_communication:
     - agent: "main"
       message: "Created complete Power BI directory with 43 reports across 7 work areas. Backend has MongoDB integration with proper API endpoints. Frontend has professional card-based UI with filtering, search, and group categorization. Ready for testing."
+    - agent: "testing"
+      message: "Completed testing of the backend API. Basic endpoints (GET /api/reports, GET /api/groups, GET /api/stats, GET /api/reports/{id}) are working correctly. Admin endpoints for CRUD operations are mostly working with some minor issues in error handling for invalid inputs. The database initialization is working correctly with 46 reports loaded across 7 work areas. The API correctly validates PowerBI URLs and prevents duplicates. Overall, the backend is functioning as expected with only minor issues in error handling that don't affect core functionality."
