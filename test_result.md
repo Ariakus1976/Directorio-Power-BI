@@ -107,27 +107,33 @@
 ## backend:
   - task: "Create FastAPI backend with reports API"
     implemented: true
-    working: false  # needs testing
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
           agent: "main"
           comment: "Created complete FastAPI backend with MongoDB integration, 43 Power BI reports loaded, endpoints for reports, groups, and stats"
+        - working: true
+          agent: "testing"
+          comment: "Basic API endpoints (/api/reports, /api/groups, /api/stats, /api/reports/{id}) are working correctly. CRUD operations for reports and groups are mostly working with some minor issues in error handling."
 
   - task: "Database initialization with Power BI reports"
     implemented: true
-    working: false  # needs testing
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
           agent: "main"
           comment: "Added all 43 Power BI reports with proper categorization across 7 work areas"
+        - working: true
+          agent: "testing"
+          comment: "Database initialization is working correctly. All 46 reports are loaded into MongoDB with proper categorization across 7 work areas."
 
 ## frontend:
   - task: "Create React frontend with modern UI"
