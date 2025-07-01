@@ -889,6 +889,13 @@ function App() {
         </div>
       </footer>
 
+      {/* Password Modal */}
+      <PasswordModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        onSuccess={handlePasswordSuccess}
+      />
+
       {/* Admin Modal */}
       <AdminModal 
         isOpen={showAdmin} 
