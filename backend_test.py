@@ -671,7 +671,8 @@ def run_all_tests() -> None:
     """Run all tests and print a summary"""
     print(f"\n{Colors.BOLD}{Colors.HEADER}===== POWER BI DIRECTORY API TESTS ====={Colors.ENDC}")
     
-    tests = [
+    # Basic endpoint tests
+    basic_tests = [
         ("Health Check", test_health_check),
         ("Reports API", test_reports_api),
         ("Groups API", test_groups_api),
@@ -682,9 +683,40 @@ def run_all_tests() -> None:
         ("Individual Report", test_individual_report)
     ]
     
-    results = {}
-    for name, test_func in tests:
-        results[name] = test_func()
+    # Run basic tests
+    basic_results = {}
+    for name, test_func in basic_tests:
+        basic_results[name] = test_func()
+    
+    # Admin endpoint tests (CRUD operations)
+    # These tests depend on each other, so we need to run them in sequence
+    admin_results = {}
+    
+    # Create a report and get its ID
+    create_report_result, report_id = test_create_report()
+    admin_results["Create Report"] = create_report_result
+    
+    # Update the report if it was created successfully
+    if create_report_result and report_id:
+        update_report_result = test_update_report(report_id)
+        admin_results["Update Report"] = update_report_result
+        
+        # Delete the report if it was updated successfully
+        if update_report_result:
+            delete_report_result = test_delete_report(report_id)
+            admin_results["Delete Report"] = delete_report_result
+    
+    # Create a group and get its name
+    create_group_result, group_name = test_create_group()
+    admin_results["Create Group"] = create_group_result
+    
+    # Delete the group if it was created successfully
+    if create_group_result and group_name:
+        delete_group_result = test_delete_group(group_name)
+        admin_results["Delete Group"] = delete_group_result
+    
+    # Combine results
+    results = {**basic_results, **admin_results}
     
     # Print summary
     print(f"\n{Colors.BOLD}{Colors.HEADER}===== TEST SUMMARY ====={Colors.ENDC}")
