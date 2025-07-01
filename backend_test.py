@@ -2,7 +2,8 @@
 import requests
 import json
 import sys
-from typing import Dict, Any, List, Optional
+import uuid
+from typing import Dict, Any, List, Optional, Tuple
 
 # Get the backend URL from the frontend .env file
 BACKEND_URL = "https://48ef11f4-6b93-4753-a4b0-eb29da7e5375.preview.emergentagent.com"
