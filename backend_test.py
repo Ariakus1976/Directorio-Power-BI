@@ -384,6 +384,289 @@ def test_individual_report() -> bool:
     
     return success_field and data_exists
 
+def test_create_report() -> Tuple[bool, str]:
+    """Test 9: Create Report - Test POST /api/admin/reports"""
+    print_test_header("Create Report")
+    
+    # Create a unique report name to avoid conflicts
+    unique_id = str(uuid.uuid4())[:8]
+    test_report = {
+        "name": f"Test Report {unique_id}",
+        "group": "COMPRAS",
+        "url": "https://app.powerbi.com/groups/me/reports/12345-abcde/ReportSection"
+    }
+    
+    # Test creating a new report
+    response = make_post_request("/admin/reports", test_report)
+    
+    # Check if response has success field and it's true
+    success_field = response.get("success", False)
+    print_test_result(success_field, "Response has success field and it's true")
+    
+    # Check if data field exists and is a dictionary
+    data_exists = "data" in response and isinstance(response["data"], dict)
+    print_test_result(data_exists, "Response has data field with the created report")
+    
+    # Check if the report has the expected fields
+    report_id = None
+    if data_exists:
+        fields = ["id", "name", "group", "url", "created_at", "updated_at"]
+        has_all_fields = all(field in response["data"] for field in fields)
+        print_test_result(has_all_fields, "Created report has all expected fields")
+        
+        # Check if the report has the expected values
+        name_matches = response["data"]["name"] == test_report["name"]
+        group_matches = response["data"]["group"] == test_report["group"]
+        url_matches = response["data"]["url"] == test_report["url"]
+        
+        values_match = name_matches and group_matches and url_matches
+        print_test_result(values_match, "Created report has the expected values")
+        
+        if not values_match:
+            if not name_matches:
+                print(f"{Colors.WARNING}Name mismatch: {response['data']['name']} != {test_report['name']}{Colors.ENDC}")
+            if not group_matches:
+                print(f"{Colors.WARNING}Group mismatch: {response['data']['group']} != {test_report['group']}{Colors.ENDC}")
+            if not url_matches:
+                print(f"{Colors.WARNING}URL mismatch: {response['data']['url']} != {test_report['url']}{Colors.ENDC}")
+        
+        # Save the report ID for later tests
+        report_id = response["data"]["id"]
+        print(f"{Colors.OKBLUE}Created report with ID: {report_id}{Colors.ENDC}")
+    
+    # Test validation: URL must contain app.powerbi.com
+    invalid_url_report = {
+        "name": f"Invalid URL Report {unique_id}",
+        "group": "COMPRAS",
+        "url": "https://example.com/not-powerbi"
+    }
+    
+    invalid_response = make_post_request("/admin/reports", invalid_url_report)
+    url_validation_works = not invalid_response.get("success", True)
+    print_test_result(url_validation_works, "URL validation works (rejects non-PowerBI URLs)")
+    
+    # Test validation: Name and group must not be empty
+    empty_name_report = {
+        "name": "",
+        "group": "COMPRAS",
+        "url": "https://app.powerbi.com/groups/me/reports/12345/ReportSection"
+    }
+    
+    empty_name_response = make_post_request("/admin/reports", empty_name_report)
+    name_validation_works = not empty_name_response.get("success", True)
+    print_test_result(name_validation_works, "Name validation works (rejects empty names)")
+    
+    # Test duplicate prevention
+    if report_id:
+        duplicate_report = {
+            "name": test_report["name"],
+            "group": test_report["group"],
+            "url": test_report["url"]
+        }
+        
+        duplicate_response = make_post_request("/admin/reports", duplicate_report)
+        duplicate_prevention_works = not duplicate_response.get("success", True)
+        print_test_result(duplicate_prevention_works, "Duplicate prevention works (rejects same name+group)")
+    
+    return (success_field and data_exists, report_id if report_id else "")
+
+def test_update_report(report_id: str) -> bool:
+    """Test 10: Update Report - Test PUT /api/admin/reports/{id}"""
+    print_test_header("Update Report")
+    
+    if not report_id:
+        print_test_result(False, "No report ID provided for update test")
+        return False
+    
+    # Update the report name
+    update_data = {
+        "name": f"Updated Report {str(uuid.uuid4())[:8]}"
+    }
+    
+    # Test updating the report
+    response = make_put_request(f"/admin/reports/{report_id}", update_data)
+    
+    # Check if response has success field and it's true
+    success_field = response.get("success", False)
+    print_test_result(success_field, "Response has success field and it's true")
+    
+    # Check if data field exists and is a dictionary
+    data_exists = "data" in response and isinstance(response["data"], dict)
+    print_test_result(data_exists, "Response has data field with the updated report")
+    
+    # Check if the report has the updated name
+    if data_exists:
+        name_updated = response["data"]["name"] == update_data["name"]
+        print_test_result(name_updated, "Report name was updated successfully")
+        
+        if not name_updated:
+            print(f"{Colors.WARNING}Name not updated: {response['data']['name']} != {update_data['name']}{Colors.ENDC}")
+    
+    # Test updating the URL
+    update_url_data = {
+        "url": "https://app.powerbi.com/groups/me/reports/67890-fghij/ReportSection"
+    }
+    
+    url_response = make_put_request(f"/admin/reports/{report_id}", update_url_data)
+    url_updated = (
+        url_response.get("success", False) and 
+        "data" in url_response and 
+        url_response["data"]["url"] == update_url_data["url"]
+    )
+    print_test_result(url_updated, "Report URL was updated successfully")
+    
+    # Test validation: URL must contain app.powerbi.com
+    invalid_url_data = {
+        "url": "https://example.com/not-powerbi"
+    }
+    
+    invalid_response = make_put_request(f"/admin/reports/{report_id}", invalid_url_data)
+    url_validation_works = not invalid_response.get("success", True)
+    print_test_result(url_validation_works, "URL validation works for updates (rejects non-PowerBI URLs)")
+    
+    # Test with an invalid ID
+    invalid_id = "invalid-id-12345"
+    invalid_id_response = make_put_request(f"/admin/reports/{invalid_id}", update_data)
+    invalid_id_handled = not invalid_id_response.get("success", True)
+    print_test_result(invalid_id_handled, "Invalid report ID is handled correctly")
+    
+    return success_field and data_exists
+
+def test_delete_report(report_id: str) -> bool:
+    """Test 11: Delete Report - Test DELETE /api/admin/reports/{id}"""
+    print_test_header("Delete Report")
+    
+    if not report_id:
+        print_test_result(False, "No report ID provided for delete test")
+        return False
+    
+    # Test deleting the report
+    response = make_delete_request(f"/admin/reports/{report_id}")
+    
+    # Check if response has success field and it's true
+    success_field = response.get("success", False)
+    print_test_result(success_field, "Response has success field and it's true")
+    
+    # Check if the report was actually deleted
+    if success_field:
+        # Try to get the deleted report
+        get_response = make_request(f"/reports/{report_id}")
+        report_deleted = not get_response.get("success", True) or "data" not in get_response
+        print_test_result(report_deleted, "Report was actually deleted from the database")
+    
+    # Test with an invalid ID
+    invalid_id = "invalid-id-12345"
+    invalid_id_response = make_delete_request(f"/admin/reports/{invalid_id}")
+    invalid_id_handled = not invalid_id_response.get("success", True)
+    print_test_result(invalid_id_handled, "Invalid report ID is handled correctly")
+    
+    return success_field
+
+def test_create_group() -> Tuple[bool, str]:
+    """Test 12: Create Group - Test POST /api/admin/groups"""
+    print_test_header("Create Group")
+    
+    # Create a unique group name to avoid conflicts
+    unique_id = str(uuid.uuid4())[:8]
+    test_group = {
+        "name": f"TEST_GROUP_{unique_id}"
+    }
+    
+    # Test creating a new group
+    response = make_post_request("/admin/groups", test_group)
+    
+    # Check if response has success field and it's true
+    success_field = response.get("success", False)
+    print_test_result(success_field, "Response has success field and it's true")
+    
+    # Check if data field exists and is a dictionary
+    data_exists = "data" in response and isinstance(response["data"], dict)
+    print_test_result(data_exists, "Response has data field with the created group")
+    
+    # Check if the group has the expected name
+    group_name = None
+    if data_exists:
+        name_matches = response["data"]["name"] == test_group["name"].upper()
+        print_test_result(name_matches, "Created group has the expected name")
+        
+        if not name_matches:
+            print(f"{Colors.WARNING}Name mismatch: {response['data']['name']} != {test_group['name'].upper()}{Colors.ENDC}")
+        
+        # Save the group name for later tests
+        group_name = response["data"]["name"]
+        print(f"{Colors.OKBLUE}Created group: {group_name}{Colors.ENDC}")
+    
+    # Test validation: Group name must not be empty
+    empty_name_group = {
+        "name": ""
+    }
+    
+    empty_name_response = make_post_request("/admin/groups", empty_name_group)
+    name_validation_works = not empty_name_response.get("success", True)
+    print_test_result(name_validation_works, "Name validation works (rejects empty names)")
+    
+    # Test duplicate prevention
+    if group_name:
+        duplicate_group = {
+            "name": test_group["name"]
+        }
+        
+        duplicate_response = make_post_request("/admin/groups", duplicate_group)
+        duplicate_prevention_works = not duplicate_response.get("success", True)
+        print_test_result(duplicate_prevention_works, "Duplicate prevention works (rejects same group name)")
+    
+    return (success_field and data_exists, group_name if group_name else "")
+
+def test_delete_group(group_name: str) -> bool:
+    """Test 13: Delete Group - Test DELETE /api/admin/groups/{name}"""
+    print_test_header("Delete Group")
+    
+    if not group_name:
+        print_test_result(False, "No group name provided for delete test")
+        return False
+    
+    # Test deleting the group
+    response = make_delete_request(f"/admin/groups/{group_name}")
+    
+    # Check if response has success field and it's true
+    success_field = response.get("success", False)
+    print_test_result(success_field, "Response has success field and it's true")
+    
+    # Check if the group was actually deleted
+    if success_field:
+        # Get all groups to check if the deleted group is gone
+        groups_response = make_request("/groups")
+        if groups_response.get("success", False) and "data" in groups_response:
+            group_deleted = group_name not in groups_response["data"]
+            print_test_result(group_deleted, "Group was actually deleted")
+    
+    # Test deleting a group with reports
+    # First, create a new group
+    unique_id = str(uuid.uuid4())[:8]
+    test_group = {
+        "name": f"TEST_GROUP_{unique_id}"
+    }
+    
+    group_response = make_post_request("/admin/groups", test_group)
+    if group_response.get("success", False) and "data" in group_response:
+        new_group_name = group_response["data"]["name"]
+        
+        # Create a report in this group
+        test_report = {
+            "name": f"Test Report {unique_id}",
+            "group": new_group_name,
+            "url": "https://app.powerbi.com/groups/me/reports/12345-abcde/ReportSection"
+        }
+        
+        report_response = make_post_request("/admin/reports", test_report)
+        if report_response.get("success", False):
+            # Now try to delete the group with a report
+            delete_response = make_delete_request(f"/admin/groups/{new_group_name}")
+            protection_works = not delete_response.get("success", True)
+            print_test_result(protection_works, "Cannot delete a group with reports (protection works)")
+    
+    return success_field
+
 def run_all_tests() -> None:
     """Run all tests and print a summary"""
     print(f"\n{Colors.BOLD}{Colors.HEADER}===== POWER BI DIRECTORY API TESTS ====={Colors.ENDC}")
