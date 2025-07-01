@@ -56,6 +56,54 @@ def make_request(endpoint: str, params: Optional[Dict[str, str]] = None) -> Dict
         print(f"{Colors.FAIL}Error making request to {url}: {str(e)}{Colors.ENDC}")
         return {"success": False, "error": str(e)}
 
+def make_post_request(endpoint: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    """Make a POST request to the API and return the response"""
+    url = f"{API_BASE_URL}{endpoint}"
+    try:
+        response = requests.post(url, json=data)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"{Colors.FAIL}Error making POST request to {url}: {str(e)}{Colors.ENDC}")
+        if hasattr(e, 'response') and e.response is not None:
+            try:
+                return e.response.json()
+            except:
+                return {"success": False, "error": str(e), "status_code": e.response.status_code}
+        return {"success": False, "error": str(e)}
+
+def make_put_request(endpoint: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    """Make a PUT request to the API and return the response"""
+    url = f"{API_BASE_URL}{endpoint}"
+    try:
+        response = requests.put(url, json=data)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"{Colors.FAIL}Error making PUT request to {url}: {str(e)}{Colors.ENDC}")
+        if hasattr(e, 'response') and e.response is not None:
+            try:
+                return e.response.json()
+            except:
+                return {"success": False, "error": str(e), "status_code": e.response.status_code}
+        return {"success": False, "error": str(e)}
+
+def make_delete_request(endpoint: str) -> Dict[str, Any]:
+    """Make a DELETE request to the API and return the response"""
+    url = f"{API_BASE_URL}{endpoint}"
+    try:
+        response = requests.delete(url)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"{Colors.FAIL}Error making DELETE request to {url}: {str(e)}{Colors.ENDC}")
+        if hasattr(e, 'response') and e.response is not None:
+            try:
+                return e.response.json()
+            except:
+                return {"success": False, "error": str(e), "status_code": e.response.status_code}
+        return {"success": False, "error": str(e)}
+
 def test_health_check() -> bool:
     """Test 1: Basic Health Check - Test the root endpoint"""
     print_test_header("Basic Health Check")
